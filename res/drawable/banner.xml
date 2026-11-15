@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 320x180 launcher banner: a screen with a red "live" dot. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp" android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#FF14181F" android:pathData="M0,0h320v180h-320z" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="8"
+        android:pathData="M104,46h112a10,10 0,0 1,10 10v62a10,10 0,0 1,-10 10h-112a10,10 0,0 1,-10 -10v-62a10,10 0,0 1,10 -10z" />
+    <path android:fillColor="#FFFF4D4D" android:pathData="M160,87m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0" />
+</vector>
