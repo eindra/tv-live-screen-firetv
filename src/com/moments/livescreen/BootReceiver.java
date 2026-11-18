@@ -3,6 +3,7 @@ package com.moments.livescreen;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 /**
  * Opens Live Screen when the stick powers up. Android only lets it start an activity from here once
@@ -11,6 +12,7 @@ import android.content.Intent;
 public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context c, Intent i) {
+        Log.i("LiveScreen", "boot: " + i.getAction());
         c.startActivity(new Intent(c, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
     }
 }

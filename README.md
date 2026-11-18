@@ -34,4 +34,7 @@ To open by itself at power-on, allow it once to start from the background:
 ~/android-sdk/platform-tools/adb shell appops set com.moments.livescreen SYSTEM_ALERT_WINDOW allow
 ```
 
+Android skips the power-on start for an app that was force-stopped (Settings › Applications › Force stop)
+until it's opened once by hand. On Fire TV it takes about a minute after the home screen appears.
+
 NDI® is a registered trademark of Vizrt NDI AB.
