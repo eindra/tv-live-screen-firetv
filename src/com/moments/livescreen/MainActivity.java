@@ -42,6 +42,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private SurfaceView video;
     private TextView status;
+    private TextView hint;
     private LinearLayout pickerBox;
     private TextView pickerInfo;
     private ListView picker;
@@ -53,6 +54,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     private volatile String[] found = new String[0];
     private volatile boolean finding;
     private long shownW, shownH;
+    private boolean wasLive;
+    private int waitingTicks;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -82,6 +85,17 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         status.setPadding(48, 24, 48, 24);
         root.addView(status, new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER));
 
+        hint = new TextView(this);
+        hint.setText("Press OK to choose what to show");
+        hint.setTextColor(Color.WHITE);
+        hint.setTextSize(18);
+        hint.setBackgroundColor(0xB3000000);
+        hint.setPadding(28, 14, 28, 14);
+        hint.setVisibility(View.GONE);
+        FrameLayout.LayoutParams hp = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        hp.bottomMargin = 60;
+        root.addView(hint, hp);
+
         pickerBox = new LinearLayout(this);
         pickerBox.setOrientation(LinearLayout.VERTICAL);
         pickerBox.setBackgroundColor(0xE6101418);
@@ -103,7 +117,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         });
         pickerBox.addView(picker, new LinearLayout.LayoutParams(-1, -2));
         pickerBox.setVisibility(View.GONE);
-        root.addView(pickerBox, new FrameLayout.LayoutParams(900, -2, Gravity.CENTER));
+        root.addView(pickerBox, new FrameLayout.LayoutParams(1400, -2, Gravity.CENTER));
 
         setContentView(root);
     }
@@ -151,15 +165,31 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         play();
     }
 
-    /** First run: Moments Creator's feed as soon as it shows up. */
+    /**
+     * First run: Moments Creator's feed as soon as it shows up; with only other sources on the network,
+     * the list opens so one can be picked.
+     */
     private void onSources() {
         if (source == null) {
             for (String s : found) {
                 if (s.contains(MOMENTS_FEED)) { choose(s, true); break; }
             }
+            if (source == null && found.length > 0) openPicker();
         }
         if (pickerBox.getVisibility() == View.VISIBLE) fillPicker();
     }
+
+    private void openPicker() {
+        fillPicker();
+        hint.setVisibility(View.GONE);
+        pickerBox.setVisibility(View.VISIBLE);
+        picker.requestFocus();
+        picker.setSelection(Math.max(Arrays.asList(found).indexOf(source), 0));
+    }
+
+    private final Runnable hideHint = new Runnable() {
+        @Override public void run() { hint.setVisibility(View.GONE); }
+    };
 
     private final Runnable tick = new Runnable() {
         @Override public void run() {
@@ -170,9 +200,19 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                         ? "Looking for NDI sources on this network…"
                         : "Press OK to choose what to show.");
             } else if (!live) {
-                status.setText("Waiting for " + shortName(source) + "…");
+                // After a while, point to the others that are there.
+                boolean others = found.length > (Arrays.asList(found).contains(source) ? 1 : 0);
+                status.setText("Waiting for " + shortName(source) + "…"
+                        + (others && waitingTicks >= 10 ? "\nPress OK to choose another source." : ""));
             }
+            waitingTicks = live ? 0 : waitingTicks + 1;
             status.setVisibility(live ? View.GONE : View.VISIBLE);
+            if (live && !wasLive && pickerBox.getVisibility() != View.VISIBLE) {
+                hint.setVisibility(View.VISIBLE);
+                ui.removeCallbacks(hideHint);
+                ui.postDelayed(hideHint, 6000);
+            }
+            wasLive = live;
             if (live && (s[1] != shownW || s[2] != shownH)) fit(s[1], s[2]);
             if (pickerBox.getVisibility() == View.VISIBLE) {
                 pickerInfo.setText(live
@@ -197,7 +237,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     private void fillPicker() {
         pickerItems.clear();
-        for (String s : found) pickerItems.add((s.equals(source) ? "●  " : "     ") + s);
+        for (String s : found) pickerItems.add((s.equals(source) ? "●  " : "     ") + label(s));
         pickerItems.add(low ? "Quality: lower (for weak Wi‑Fi)" : "Quality: full");
         ((ArrayAdapter<?>) picker.getAdapter()).notifyDataSetChanged();
     }
@@ -220,11 +260,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         boolean open = pickerBox.getVisibility() == View.VISIBLE;
         if (!open && (code == KeyEvent.KEYCODE_DPAD_CENTER || code == KeyEvent.KEYCODE_ENTER
                 || code == KeyEvent.KEYCODE_MENU || code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN)) {
-            fillPicker();
-            pickerBox.setVisibility(View.VISIBLE);
-            picker.requestFocus();
-            int at = Arrays.asList(found).indexOf(source);
-            picker.setSelection(Math.max(at, 0));
+            openPicker();
             return true;
         }
         if (open && code == KeyEvent.KEYCODE_BACK) {
@@ -232,6 +268,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             return true;
         }
         return super.onKeyDown(code, e);
+    }
+
+    /** "MAC.LOCALDOMAIN (Moments Live – Clean)" → "Moments Live – Clean   (MAC)". */
+    private static String label(String s) {
+        int a = s.indexOf('(');
+        if (a <= 0) return s;
+        String machine = s.substring(0, a).trim();
+        int dot = machine.indexOf('.');
+        return shortName(s) + "   (" + (dot > 0 ? machine.substring(0, dot) : machine) + ")";
     }
 
     /** "MAC (Moments Live – Clean)" → "Moments Live – Clean". */

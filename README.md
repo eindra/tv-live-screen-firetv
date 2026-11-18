@@ -6,6 +6,8 @@ its NDI® feed. Delay is NDI's: a few frames. Audio is ignored; the room's sound
 - Opens straight to Moments Creator's feed ("Moments Live – Clean") as soon as it appears, and keeps
   showing the last one chosen from then on. While the feed is off it says so, and the picture comes back
   by itself when the Mac starts sending again.
+- Finds every NDI source on the network by itself. With no Moments Creator feed there, the list opens
+  so one can be picked; a hint at the bottom says OK changes it whenever the picture starts.
 - **OK** on the remote: the list of NDI sources on the network, the picture's size and frame rate,
   and **Quality** (full, or lower for weak Wi-Fi). **Back** closes it.
 - Opens by itself when the stick powers on (after the one-time grant below).
